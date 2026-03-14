@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hausaufgaben Game</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-100 via-white to-slate-200 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useMemo, useState } = React;
+
+    const TASK_TABS = ["Heute", "Diese Woche", "Extras"];
+    const KID_TABS = ["Aufgaben", "Belohnungen"];
+    const PARENT_TABS = ["Aufgaben", "Belohnungen", "Verwalten"];
+
+    const DEFAULT_TASKS = [
+      {
+        id: "bett_machen",
+        name: "Bett machen",
+        points: 2,
+        child: "both",
+        icon: "🛏️",
+        tab: "Heute",
+        desc: "Jeden Morgen das Bett ordentlich machen.",
+      },
+      {
+        id: "tisch_abräumen",
+        name: "Tisch abräumen",
+        points: 2,
+        child: "both",
+        icon: "🍽️",
+        tab: "Heute",
+        desc: "Die Sachen vom Tisch wegräumen.",
+      },
+      {
+        id: "tisch_decken",
+        name: "Tisch decken",
+        points: 2,
+        child: "both",
+        icon: "🥄",
+        tab: "Heute",
+        desc: "Teller, Besteck und Gläser vorbereiten.",
+      },
+      {
+        id: "decke_sofa",
+        name: "Decke vom Sofa aufräumen",
+        points: 1,
+        child: "both",
+        icon: "🛋️",
+        tab: "Heute",
+        desc: "Die Decke ordentlich zusammenlegen.",
+      },
+      {
+        id: "fussballtasche_auspacken",
+        name: "Fußballtasche auspacken",
+        points: 3,
+        child: "both",
+        icon: "🎒",
+        tab: "Diese Woche",
+        desc: "Kleidung raus, Schuhe lüften, Flasche leeren.",
+      },
+      {
+        id: "logopedia_ueben",
+        name: "Logopädie üben",
+        points: 3,
+        child: "alessia",
+        icon: "🗣️",
+        tab: "Diese Woche",
+        desc: "3× pro Woche üben.",
+        timesPerWeek: 3,
+      },
+      {
+        id: "spuelmaschine",
+        name: "Lavaplatos ausräumen",
+        points: 4,
+        child: "both",
+        icon: "🍽️",
+        tab: "Diese Woche",
+        desc: "Geschirr aus dem Lavaplatos ausräumen.",
+      },
+      {
+        id: "lavadora",
+        name: "Bei der Lavadora helfen",
+        points: 4,
+        child: "both",
+        icon: "🧺",
+        tab: "Diese Woche",
+        desc: "Beim Waschen helfen.",
+      },
+      {
+        id: "lavabo_reinigen",
+        name: "Lavabo reinigen",
+        points: 4,
+        child: "both",
+        icon: "🚰",
+        tab: "Diese Woche",
+        desc: "Das Waschbecken sauber machen.",
+      },
+      {
+        id: "extra_punkte",
+        name: "Extrapunkte",
+        points: 0,
+        child: "both",
+        icon: "⭐",
+        tab: "Extras",
+        desc: "Eltern entscheiden später über die Punkte.",
+        variablePoints: true,
+      },
+    ];
+
+    const DEFAULT_REWARDS = [
+      { id: "musik_auto", name: "Musik im Auto auswählen", cost: 10, icon: "🎵", desc: "Heute darfst du die Musik auswählen." },
+      { id: "dessert", name: "Dessert auswählen", cost: 20, icon: "🍦", desc: "Du entscheidest das Dessert." },
+      { id: "switch_20", name: "20 Min. Nintendo Switch", cost: 25, icon: "🎮", desc: "20 Minuten extra Spielzeit." },
+      { id: "film", name: "Film auswählen", cost: 30, icon: "🎬", desc: "Du suchst den Film aus." },
+      { id: "wochenende", name: "Wochenend-Aktivität auswählen", cost: 50, icon: "🌟", desc: "Du darfst die Aktivität aussuchen." },
+    ];
+
+    function App() {
+      const [screen, setScreen] = useState("home");
+      const [selectedKid, setSelectedKid] = useState("alessia");
+      const [activeTaskTab, setActiveTaskTab] = useState("Heute");
+      const [kidTab, setKidTab] = useState("Aufgaben");
+      const [parentTab, setParentTab] = useState("Aufgaben");
+
+      const [tasks, setTasks] = useState(DEFAULT_TASKS);
+      const [rewards, setRewards] = useState(DEFAULT_REWARDS);
+
+      const [points, setPoints] = useState({
+        alessia: 0,
+        aurelia: 0,
+      });
+
+      const [weeklyProgress, setWeeklyProgress] = useState({
+        logopedia_ueben: { alessia: 0 },
+      });
+
+      const [pendingApprovals, setPendingApprovals] = useState([]);
+      const [pendingRewardRequests, setPendingRewardRequests] = useState([]);
+      const [approvedRewardsHistory, setApprovedRewardsHistory] = useState([]);
+
+      const [newTask, setNewTask] = useState({
+        name: "",
+        points: 2,
+        child: "both",
+        icon: "✅",
+        tab: "Heute",
+        desc: "",
+        timesPerWeek: "",
+      });
+
+      const [newReward, setNewReward] = useState({
+        name: "",
+        cost: 10,
+        icon: "🎁",
+        desc: "",
+      });
+
+      const kids = {
+        alessia: {
+          id: "alessia",
+          name: "Alessia",
+          icon: "🤸",
+          iconBg: "bg-pink-100",
+          taskBg: "bg-pink-50 hover:bg-pink-100 border-pink-100",
+          badgeText: "text-pink-700",
+          softPanel: "bg-pink-50 border-pink-100",
+        },
+        aurelia: {
+          id: "aurelia",
+          name: "Aurelia",
+          icon: "⚽",
+          iconBg: "bg-emerald-100",
+          taskBg: "bg-emerald-50 hover:bg-emerald-100 border-emerald-100",
+          badgeText: "text-emerald-700",
+          softPanel: "bg-emerald-50 border-emerald-100",
+        },
+      };
+
+      const currentKid = kids[selectedKid];
+
+      const tasksForKid = useMemo(() => {
+        return tasks.filter((task) => {
+          const belongsToKid = task.child === "both" || task.child === selectedKid;
+          const belongsToTab = task.tab === activeTaskTab;
+          return belongsToKid && belongsToTab;
+        });
+      }, [tasks, selectedKid, activeTaskTab]);
+
+      const rewardHistoryForKid = approvedRewardsHistory
+        .filter((item) => item.kidId === selectedKid)
+        .slice()
+        .reverse();
+
+      function openKid(kidId) {
+        setSelectedKid(kidId);
+        setActiveTaskTab("Heute");
+        setKidTab("Aufgaben");
+        setScreen("kid");
+      }
+
+      function openParents() {
+        setParentTab("Aufgaben");
+        setScreen("parents");
+      }
+
+      function goHome() {
+        setScreen("home");
+      }
+
+      function slugify(text) {
+        return text.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + Date.now();
+      }
+
+      function isAlreadyPending(taskId, kidId) {
+        return pendingApprovals.some((item) => item.taskId === taskId && item.kidId === kidId);
+      }
+
+      function completeTask(task, kidId) {
+        if (task.timesPerWeek) {
+          const done = weeklyProgress[task.id]?.[kidId] || 0;
+          const pendingForThisTask = pendingApprovals.filter(
+            (item) => item.taskId === task.id && item.kidId === kidId
+          ).length;
+
+          if (done + pendingForThisTask >= task.timesPerWeek) {
+            alert("Diese Aufgabe hat diese Woche schon genug Einträge.");
+            return;
+          }
+        }
+
+        if (isAlreadyPending(task.id, kidId) && !task.timesPerWeek) {
+          alert("Diese Aufgabe wartet schon auf Bestätigung.");
+          return;
+        }
+
+        setPendingApprovals((prev) => [
+          {
+            id: Date.now() + Math.random(),
+            taskId: task.id,
+            kidId,
+            customPoints: task.variablePoints ? "" : task.points,
+          },
+          ...prev,
+        ]);
+
+        alert("Aufgabe markiert. Wartet auf Bestätigung durch Eltern.");
+      }
+
+      function approveTask(itemId) {
+        const item = pendingApprovals.find((x) => x.id === itemId);
+        if (!item) return;
+
+        const task = tasks.find((t) => t.id === item.taskId);
+        if (!task) return;
+
+        const awardedPoints = task.variablePoints
+          ? Number(item.customPoints || 0)
+          : Number(task.points || 0);
+
+        setPoints((prev) => ({
+          ...prev,
+          [item.kidId]: prev[item.kidId] + awardedPoints,
+        }));
+
+        if (task.timesPerWeek) {
+          setWeeklyProgress((prev) => ({
+            ...prev,
+            [task.id]: {
+              ...(prev[task.id] || {}),
+              [item.kidId]: (prev[task.id]?.[item.kidId] || 0) + 1,
+            },
+          }));
+        }
+
+        setPendingApprovals((prev) => prev.filter((x) => x.id !== itemId));
+      }
+
+      function rejectTask(itemId) {
+        setPendingApprovals((prev) => prev.filter((x) => x.id !== itemId));
+      }
+
+      function updateCustomPoints(itemId, value) {
+        setPendingApprovals((prev) =>
+          prev.map((item) =>
+            item.id === itemId ? { ...item, customPoints: value } : item
+          )
+        );
+      }
+
+      function requestReward(reward, kidId) {
+        const alreadyPending = pendingRewardRequests.some(
+          (item) => item.rewardId === reward.id && item.kidId === kidId
+        );
+
+        if (alreadyPending) {
+          alert("Diese Belohnung wartet schon auf Bestätigung.");
+          return;
+        }
+
+        if ((points[kidId] || 0) < reward.cost) {
+          alert("Nicht genug Punkte.");
+          return;
+        }
+
+        setPendingRewardRequests((prev) => [
+          {
+            id: Date.now() + Math.random(),
+            rewardId: reward.id,
+            kidId,
+          },
+          ...prev,
+        ]);
+
+        alert("Belohnung angefragt. Wartet auf Bestätigung durch Eltern.");
+      }
+
+      function approveReward(requestId) {
+        const request = pendingRewardRequests.find((x) => x.id === requestId);
+        if (!request) return;
+
+        const reward = rewards.find((r) => r.id === request.rewardId);
+        if (!reward) return;
+
+        if ((points[request.kidId] || 0) < reward.cost) {
+          alert("Nicht genug Punkte mehr.");
+          return;
+        }
+
+        setPoints((prev) => ({
+          ...prev,
+          [request.kidId]: prev[request.kidId] - reward.cost,
+        }));
+
+        setApprovedRewardsHistory((prev) => [
+          ...prev,
+          {
+            id: request.id,
+            rewardId: reward.id,
+            kidId: request.kidId,
+            cost: reward.cost,
+            createdAt: new Date().toLocaleString("de-DE"),
+          },
+        ]);
+
+        setPendingRewardRequests((prev) => prev.filter((x) => x.id !== requestId));
+      }
+
+      function rejectReward(requestId) {
+        setPendingRewardRequests((prev) => prev.filter((x) => x.id !== requestId));
+      }
+
+      function addTask() {
+        if (!newTask.name.trim()) return;
+
+        const task = {
+          id: slugify(newTask.name),
+          name: newTask.name.trim(),
+          points: Number(newTask.points || 0),
+          child: newTask.child,
+          icon: newTask.icon || "✅",
+          tab: newTask.tab,
+          desc: newTask.desc || "",
+        };
+
+        if (newTask.timesPerWeek && Number(newTask.timesPerWeek) > 0) {
+          task.timesPerWeek = Number(newTask.timesPerWeek);
+        }
+
+        setTasks((prev) => [...prev, task]);
+
+        setNewTask({
+          name: "",
+          points: 2,
+          child: "both",
+          icon: "✅",
+          tab: "Heute",
+          desc: "",
+          timesPerWeek: "",
+        });
+      }
+
+      function addReward() {
+        if (!newReward.name.trim()) return;
+
+        const reward = {
+          id: slugify(newReward.name),
+          name: newReward.name.trim(),
+          cost: Number(newReward.cost || 0),
+          icon: newReward.icon || "🎁",
+          desc: newReward.desc || "",
+        };
+
+        setRewards((prev) => [...prev, reward]);
+
+        setNewReward({
+          name: "",
+          cost: 10,
+          icon: "🎁",
+          desc: "",
+        });
+      }
+
+      function updateTask(taskId, field, value) {
+        setTasks((prev) =>
+          prev.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  [field]:
+                    field === "points" || field === "timesPerWeek"
+                      ? Number(value || 0)
+                      : value,
+                }
+              : task
+          )
+        );
+      }
+
+      function deleteTask(taskId) {
+        setTasks((prev) => prev.filter((task) => task.id !== taskId));
+        setPendingApprovals((prev) => prev.filter((item) => item.taskId !== taskId));
+      }
+
+      function updateReward(rewardId, field, value) {
+        setRewards((prev) =>
+          prev.map((reward) =>
+            reward.id === rewardId
+              ? {
+                  ...reward,
+                  [field]: field === "cost" ? Number(value || 0) : value,
+                }
+              : reward
+          )
+        );
+      }
+
+      function deleteReward(rewardId) {
+        setRewards((prev) => prev.filter((reward) => reward.id !== rewardId));
+        setPendingRewardRequests((prev) => prev.filter((item) => item.rewardId !== rewardId));
+      }
+
+      function updatePoints(kidId, value) {
+        setPoints((prev) => ({
+          ...prev,
+          [kidId]: Number(value || 0),
+        }));
+      }
+
+      function renderWeeklyProgress(task, kidId) {
+        if (!task.timesPerWeek) return null;
+
+        const done = weeklyProgress[task.id]?.[kidId] || 0;
+        const total = task.timesPerWeek;
+        const pendingForThisTask = pendingApprovals.filter(
+          (item) => item.taskId === task.id && item.kidId === kidId
+        ).length;
+        const visibleDone = Math.min(done + pendingForThisTask, total);
+        const percent = Math.min((visibleDone / total) * 100, 100);
+
+        return (
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+              <span>Wochenfortschritt</span>
+              <span>{visibleDone}/{total}</span>
+            </div>
+            <div className="h-2 w-full bg-white/70 rounded-full overflow-hidden">
+              <div
+                className="h-2 bg-slate-800 rounded-full transition-all"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      function renderTaskButton(task, kidId) {
+        const kid = kids[kidId];
+        const done = task.timesPerWeek ? (weeklyProgress[task.id]?.[kidId] || 0) : null;
+        const pendingForThisTask = pendingApprovals.filter(
+          (p) => p.taskId === task.id && p.kidId === kidId
+        ).length;
+
+        const isComplete = task.timesPerWeek
+          ? done + pendingForThisTask >= task.timesPerWeek
+          : false;
+
+        const waiting = pendingApprovals.some((p) => p.taskId === task.id && p.kidId === kidId);
+
+        return (
+          <button
+            key={task.id}
+            onClick={() => completeTask(task, kidId)}
+            disabled={isComplete || (waiting && !task.timesPerWeek)}
+            className={`w-full text-left rounded-2xl px-4 py-4 transition shadow-sm border ${kid.taskBg} ${(isComplete || (waiting && !task.timesPerWeek)) ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl mt-0.5">{task.icon}</div>
+                <div>
+                  <div className="font-semibold text-slate-800 text-lg">{task.name}</div>
+                  <div className="text-sm text-slate-500">{task.desc}</div>
+                  <div className="text-xs text-slate-400 mt-1">{task.tab}</div>
+                  {waiting && !task.timesPerWeek && (
+                    <div className="text-xs text-amber-600 mt-2 font-semibold">Wartet auf Bestätigung</div>
+                  )}
+                  {task.timesPerWeek && pendingForThisTask > 0 && (
+                    <div className="text-xs text-amber-600 mt-2 font-semibold">
+                      {pendingForThisTask} offen zur Bestätigung
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={`text-sm font-bold whitespace-nowrap ${kid.badgeText}`}>
+                {task.variablePoints ? "variabel" : `+${task.points}`}
+              </div>
+            </div>
+
+            {renderWeeklyProgress(task, kidId)}
+          </button>
+        );
+      }
+
+      function renderRewardCard(reward, kidId) {
+        const pending = pendingRewardRequests.some(
+          (item) => item.rewardId === reward.id && item.kidId === kidId
+        );
+        const enough = (points[kidId] || 0) >= reward.cost;
+
+        return (
+          <div
+            key={reward.id}
+            className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">{reward.icon}</div>
+                <div>
+                  <div className="font-semibold text-slate-800">{reward.name}</div>
+                  <div className="text-sm text-slate-500">{reward.desc}</div>
+                  <div className="text-xs text-slate-400 mt-1">{reward.cost} Punkte</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => requestReward(reward, kidId)}
+                disabled={!enough || pending}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  !enough || pending
+                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                }`}
+              >
+                {pending ? "Wartet..." : "Einlösen"}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      function HomeScreen() {
+        return (
+          <div className="max-w-6xl mx-auto px-6 py-10">
+            <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-2xl shadow-lg">
+                  HG
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-slate-900">Hausaufgaben Game</h1>
+                  <p className="text-slate-600 mt-1">
+                    Kleine Aufgaben, Punkte sammeln, Belohnungen einlösen
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={openParents}
+                className="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm hover:bg-slate-50 font-semibold"
+              >
+                Elternbereich
+              </button>
+            </header>
+
+            <section className="grid md:grid-cols-2 gap-6">
+              {Object.values(kids).map((kid) => (
+                <div
+                  key={kid.id}
+                  className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6"
+                >
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${kid.iconBg}`}>
+                        {kid.icon}
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-900">{kid.name}</h2>
+                        <p className="text-slate-500 text-sm">Meine Aufgaben & Belohnungen</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-900 text-white rounded-2xl px-4 py-2 text-sm font-semibold shadow">
+                      {points[kid.id]} Punkte
+                    </div>
+                  </div>
+
+                  <div className={`mb-5 rounded-2xl border p-4 ${kid.softPanel}`}>
+                    <div className="text-sm font-semibold text-slate-700 mb-1">Offen</div>
+                    <div className="text-sm text-slate-600">
+                      Aufgaben: {pendingApprovals.filter((x) => x.kidId === kid.id).length} • Belohnungen: {pendingRewardRequests.filter((x) => x.kidId === kid.id).length}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => openKid(kid.id)}
+                    className="w-full bg-slate-900 text-white rounded-2xl py-3 font-semibold hover:bg-slate-800 transition"
+                  >
+                    {kid.name} öffnen
+                  </button>
+                </div>
+              ))}
+            </section>
+          </div>
+        );
+      }
+
+      function KidScreen() {
+        return (
+          <div className="max-w-5xl mx-auto px-6 py-10">
+            <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={goHome}
+                  className="bg-white border border-slate-200 rounded-2xl px-4 py-2 shadow-sm hover:bg-slate-50"
+                >
+                  ← Zurück
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${currentKid.iconBg}`}>
+                    {currentKid.icon}
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-slate-900">{currentKid.name}</h1>
+                    <p className="text-slate-500">Meine Punkte: {points[selectedKid]}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                {KID_TABS.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setKidTab(tab)}
+                    className={`px-5 py-2.5 rounded-2xl font-semibold border transition ${
+                      kidTab === tab
+                        ? "bg-slate-900 text-white border-slate-900"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </header>
+
+            {kidTab === "Aufgaben" && (
+              <>
+                <div className="flex flex-wrap gap-3 mb-6">
+                  {TASK_TABS.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTaskTab(tab)}
+                      className={`px-5 py-2.5 rounded-2xl font-semibold border transition ${
+                        activeTaskTab === tab
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                  <div className="mb-5">
+                    <h2 className="text-2xl font-bold text-slate-900">{activeTaskTab}</h2>
+                    <p className="text-slate-500 text-sm">
+                      {activeTaskTab === "Heute" && "Tägliche Aufgaben"}
+                      {activeTaskTab === "Diese Woche" && "Wöchentliche Aufgaben"}
+                      {activeTaskTab === "Extras" && "Extra-Aufgaben mit Sonderpunkten"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {tasksForKid.length === 0 ? (
+                      <div className="text-slate-500 text-sm">Keine Aufgaben in diesem Bereich.</div>
+                    ) : (
+                      tasksForKid.map((task) => renderTaskButton(task, selectedKid))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {kidTab === "Belohnungen" && (
+              <div className="space-y-6">
+                <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                  <div className="mb-5">
+                    <h2 className="text-2xl font-bold text-slate-900">Belohnungen</h2>
+                    <p className="text-slate-500 text-sm">
+                      Hier kannst du deine Punkte für Belohnungen einlösen.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {rewards.map((reward) => renderRewardCard(reward, selectedKid))}
+                  </div>
+                </div>
+
+                <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-slate-900">Letzte Belohnungen</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    {rewardHistoryForKid.length === 0 ? (
+                      <div className="text-slate-500 text-sm">Noch keine bestätigten Belohnungen.</div>
+                    ) : (
+                      rewardHistoryForKid.map((item) => {
+                        const reward = rewards.find((r) => r.id === item.rewardId);
+                        if (!reward) return null;
+
+                        return (
+                          <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="text-2xl">{reward.icon}</div>
+                                <div>
+                                  <div className="font-semibold text-slate-800">{reward.name}</div>
+                                  <div className="text-xs text-slate-400">{item.createdAt}</div>
+                                </div>
+                              </div>
+                              <div className="text-sm font-bold text-slate-700">-{item.cost}</div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function ParentsScreen() {
+        return (
+          <div className="max-w-6xl mx-auto px-6 py-10">
+            <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={goHome}
+                  className="bg-white border border-slate-200 rounded-2xl px-4 py-2 shadow-sm hover:bg-slate-50"
+                >
+                  ← Zurück
+                </button>
+
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900">Elternbereich</h1>
+                  <p className="text-slate-500">Aufgaben, Belohnungen und Punkte verwalten</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                {PARENT_TABS.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setParentTab(tab)}
+                    className={`px-5 py-2.5 rounded-2xl font-semibold border transition ${
+                      parentTab === tab
+                        ? "bg-slate-900 text-white border-slate-900"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </header>
+
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              {Object.values(kids).map((kid) => (
+                <div key={kid.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-bold text-slate-800">{kid.name}</div>
+                    <input
+                      type="number"
+                      value={points[kid.id]}
+                      onChange={(e) => updatePoints(kid.id, e.target.value)}
+                      className="w-28 rounded-xl border border-slate-200 px-3 py-2 text-right"
+                    />
+                  </div>
+                  <div className="text-sm text-slate-500">Punkte direkt editieren</div>
+                </div>
+              ))}
+            </div>
+
+            {parentTab === "Aufgaben" && (
+              <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Offene Aufgaben</h2>
+                    <p className="text-slate-500 text-sm">
+                      Hier entscheiden die Eltern, ob eine Aufgabe zählt.
+                    </p>
+                  </div>
+                  <div className="bg-amber-100 text-amber-800 rounded-2xl px-4 py-2 text-sm font-semibold">
+                    {pendingApprovals.length} offen
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {pendingApprovals.length === 0 ? (
+                    <div className="text-slate-500 text-sm">Keine offenen Aufgaben.</div>
+                  ) : (
+                    pendingApprovals.map((item) => {
+                      const task = tasks.find((t) => t.id === item.taskId);
+                      const kid = kids[item.kidId];
+                      if (!task || !kid) return null;
+
+                      return (
+                        <div key={item.id} className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className="text-2xl">{task.icon}</div>
+                              <div>
+                                <div className="font-bold text-slate-800">{task.name}</div>
+                                <div className="text-sm text-slate-500">{task.desc}</div>
+                                <div className="text-xs text-slate-400 mt-1">
+                                  {kid.name} • {task.tab}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 min-w-[180px]">
+                              {task.variablePoints ? (
+                                <input
+                                  type="number"
+                                  value={item.customPoints}
+                                  onChange={(e) => updateCustomPoints(item.id, e.target.value)}
+                                  placeholder="Punkte"
+                                  className="rounded-xl border border-slate-200 px-3 py-2"
+                                />
+                              ) : (
+                                <div className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">
+                                  +{task.points} Punkte
+                                </div>
+                              )}
+
+                              <button
+                                onClick={() => approveTask(item.id)}
+                                className="bg-emerald-600 text-white rounded-xl px-4 py-2 font-semibold hover:bg-emerald-700 transition"
+                              >
+                                Bestätigen
+                              </button>
+
+                              <button
+                                onClick={() => rejectTask(item.id)}
+                                className="bg-white border border-slate-200 rounded-xl px-4 py-2 font-semibold hover:bg-slate-50 transition"
+                              >
+                                Ablehnen
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {parentTab === "Belohnungen" && (
+              <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Offene Belohnungen</h2>
+                    <p className="text-slate-500 text-sm">
+                      Hier bestätigen die Eltern Belohnungen.
+                    </p>
+                  </div>
+                  <div className="bg-amber-100 text-amber-800 rounded-2xl px-4 py-2 text-sm font-semibold">
+                    {pendingRewardRequests.length} offen
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {pendingRewardRequests.length === 0 ? (
+                    <div className="text-slate-500 text-sm">Keine offenen Belohnungen.</div>
+                  ) : (
+                    pendingRewardRequests.map((item) => {
+                      const reward = rewards.find((r) => r.id === item.rewardId);
+                      const kid = kids[item.kidId];
+                      if (!reward || !kid) return null;
+
+                      const enough = (points[item.kidId] || 0) >= reward.cost;
+
+                      return (
+                        <div key={item.id} className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className="text-2xl">{reward.icon}</div>
+                              <div>
+                                <div className="font-bold text-slate-800">{reward.name}</div>
+                                <div className="text-sm text-slate-500">{reward.desc}</div>
+                                <div className="text-xs text-slate-400 mt-1">
+                                  {kid.name} • {reward.cost} Punkte
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 min-w-[180px]">
+                              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">
+                                -{reward.cost} Punkte
+                              </div>
+
+                              <button
+                                onClick={() => approveReward(item.id)}
+                                disabled={!enough}
+                                className={`rounded-xl px-4 py-2 font-semibold transition ${
+                                  enough
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                    : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                                }`}
+                              >
+                                Bestätigen
+                              </button>
+
+                              <button
+                                onClick={() => rejectReward(item.id)}
+                                className="bg-white border border-slate-200 rounded-xl px-4 py-2 font-semibold hover:bg-slate-50 transition"
+                              >
+                                Ablehnen
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {parentTab === "Verwalten" && (
+              <div className="space-y-6">
+                <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4">Aufgaben verwalten</h2>
+
+                  <div className="space-y-4 mb-8">
+                    {tasks.map((task) => (
+                      <div key={task.id} className="grid md:grid-cols-7 gap-2 border border-slate-100 rounded-2xl p-4 bg-slate-50">
+                        <input value={task.name} onChange={(e) => updateTask(task.id, "name", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input value={task.points} type="number" onChange={(e) => updateTask(task.id, "points", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <select value={task.child} onChange={(e) => updateTask(task.id, "child", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2">
+                          <option value="both">both</option>
+                          <option value="alessia">alessia</option>
+                          <option value="aurelia">aurelia</option>
+                        </select>
+                        <select value={task.tab} onChange={(e) => updateTask(task.id, "tab", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2">
+                          <option value="Heute">Heute</option>
+                          <option value="Diese Woche">Diese Woche</option>
+                          <option value="Extras">Extras</option>
+                        </select>
+                        <input value={task.icon} onChange={(e) => updateTask(task.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input value={task.timesPerWeek || ""} type="number" onChange={(e) => updateTask(task.id, "timesPerWeek", e.target.value)} placeholder="x/Woche" className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <button onClick={() => deleteTask(task.id)} className="rounded-xl bg-red-100 text-red-700 px-3 py-2 font-semibold">
+                          Löschen
+                        </button>
+                        <div className="md:col-span-7">
+                          <input value={task.desc || ""} onChange={(e) => updateTask(task.id, "desc", e.target.value)} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Aufgabe</h3>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      <input value={newTask.name} onChange={(e) => setNewTask({ ...newTask, name: e.target.value })} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.points} type="number" onChange={(e) => setNewTask({ ...newTask, points: e.target.value })} placeholder="Punkte" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.icon} onChange={(e) => setNewTask({ ...newTask, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <select value={newTask.child} onChange={(e) => setNewTask({ ...newTask, child: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2">
+                        <option value="both">both</option>
+                        <option value="alessia">alessia</option>
+                        <option value="aurelia">aurelia</option>
+                      </select>
+                      <select value={newTask.tab} onChange={(e) => setNewTask({ ...newTask, tab: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2">
+                        <option value="Heute">Heute</option>
+                        <option value="Diese Woche">Diese Woche</option>
+                        <option value="Extras">Extras</option>
+                      </select>
+                      <input value={newTask.timesPerWeek} type="number" onChange={(e) => setNewTask({ ...newTask, timesPerWeek: e.target.value })} placeholder="x/Woche optional" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <div className="md:col-span-3">
+                        <input value={newTask.desc} onChange={(e) => setNewTask({ ...newTask, desc: e.target.value })} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                      </div>
+                    </div>
+                    <button onClick={addTask} className="mt-4 rounded-xl bg-slate-900 text-white px-5 py-3 font-semibold">
+                      Aufgabe hinzufügen
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-white/60 p-6">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4">Belohnungen verwalten</h2>
+
+                  <div className="space-y-4 mb-8">
+                    {rewards.map((reward) => (
+                      <div key={reward.id} className="grid md:grid-cols-5 gap-2 border border-slate-100 rounded-2xl p-4 bg-slate-50">
+                        <input value={reward.name} onChange={(e) => updateReward(reward.id, "name", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input value={reward.cost} type="number" onChange={(e) => updateReward(reward.id, "cost", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input value={reward.icon} onChange={(e) => updateReward(reward.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <button onClick={() => deleteReward(reward.id)} className="rounded-xl bg-red-100 text-red-700 px-3 py-2 font-semibold">
+                          Löschen
+                        </button>
+                        <div></div>
+                        <div className="md:col-span-5">
+                          <input value={reward.desc || ""} onChange={(e) => updateReward(reward.id, "desc", e.target.value)} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Belohnung</h3>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      <input value={newReward.name} onChange={(e) => setNewReward({ ...newReward, name: e.target.value })} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newReward.cost} type="number" onChange={(e) => setNewReward({ ...newReward, cost: e.target.value })} placeholder="Kosten" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newReward.icon} onChange={(e) => setNewReward({ ...newReward, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <div className="md:col-span-3">
+                        <input value={newReward.desc} onChange={(e) => setNewReward({ ...newReward, desc: e.target.value })} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                      </div>
+                    </div>
+                    <button onClick={addReward} className="mt-4 rounded-xl bg-slate-900 text-white px-5 py-3 font-semibold">
+                      Belohnung hinzufügen
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      if (screen === "kid") return <KidScreen />;
+      if (screen === "parents") return <ParentsScreen />;
+      return <HomeScreen />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
