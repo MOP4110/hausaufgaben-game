@@ -134,11 +134,16 @@
       const [tasks, setTasks] = useState(DEFAULT_TASKS);
       const [rewards, setRewards] = useState(DEFAULT_REWARDS);
 
-      const [points, setPoints] = useState({
-        alessia: 0,
-        aurelia: 0,
-      });
-
+     const [points, setPoints] = useState(() => {
+  const saved = localStorage.getItem("points");
+  return saved ? JSON.parse(saved) : {
+    alessia: 0,
+    aurelia: 0
+  };
+});
+React.useEffect(() => {
+  localStorage.setItem("points", JSON.stringify(points));
+}, [points]);
       const [weeklyProgress, setWeeklyProgress] = useState({
         logopedia_ueben: { alessia: 0 },
       });
