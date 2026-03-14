@@ -131,26 +131,73 @@
       const [kidTab, setKidTab] = useState("Aufgaben");
       const [parentTab, setParentTab] = useState("Aufgaben");
 
-      const [tasks, setTasks] = useState(DEFAULT_TASKS);
-      const [rewards, setRewards] = useState(DEFAULT_REWARDS);
+ const [tasks, setTasks] = useState(() => {
+  const saved = localStorage.getItem("tasks");
+  return saved ? JSON.parse(saved) : DEFAULT_TASKS;
+});
 
-     const [points, setPoints] = useState(() => {
+const [rewards, setRewards] = useState(() => {
+  const saved = localStorage.getItem("rewards");
+  return saved ? JSON.parse(saved) : DEFAULT_REWARDS;
+});
+
+const [points, setPoints] = useState(() => {
   const saved = localStorage.getItem("points");
   return saved ? JSON.parse(saved) : {
     alessia: 0,
     aurelia: 0
   };
 });
+
+const [weeklyProgress, setWeeklyProgress] = useState(() => {
+  const saved = localStorage.getItem("weeklyProgress");
+  return saved ? JSON.parse(saved) : {
+    logopedia_ueben: { alessia: 0 },
+  };
+});
+
+const [pendingApprovals, setPendingApprovals] = useState(() => {
+  const saved = localStorage.getItem("pendingApprovals");
+  return saved ? JSON.parse(saved) : [];
+});
+
+const [pendingRewardRequests, setPendingRewardRequests] = useState(() => {
+  const saved = localStorage.getItem("pendingRewardRequests");
+  return saved ? JSON.parse(saved) : [];
+});
+
+const [approvedRewardsHistory, setApprovedRewardsHistory] = useState(() => {
+  const saved = localStorage.getItem("approvedRewardsHistory");
+  return saved ? JSON.parse(saved) : [];
+});
+
+React.useEffect(() => {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}, [tasks]);
+
+React.useEffect(() => {
+  localStorage.setItem("rewards", JSON.stringify(rewards));
+}, [rewards]);
+
 React.useEffect(() => {
   localStorage.setItem("points", JSON.stringify(points));
 }, [points]);
-      const [weeklyProgress, setWeeklyProgress] = useState({
-        logopedia_ueben: { alessia: 0 },
-      });
 
-      const [pendingApprovals, setPendingApprovals] = useState([]);
-      const [pendingRewardRequests, setPendingRewardRequests] = useState([]);
-      const [approvedRewardsHistory, setApprovedRewardsHistory] = useState([]);
+React.useEffect(() => {
+  localStorage.setItem("weeklyProgress", JSON.stringify(weeklyProgress));
+}, [weeklyProgress]);
+
+React.useEffect(() => {
+  localStorage.setItem("pendingApprovals", JSON.stringify(pendingApprovals));
+}, [pendingApprovals]);
+
+React.useEffect(() => {
+  localStorage.setItem("pendingRewardRequests", JSON.stringify(pendingRewardRequests));
+}, [pendingRewardRequests]);
+React.useEffect(() => {
+    
+  localStorage.setItem("approvedRewardsHistory", JSON.stringify(approvedRewardsHistory));
+}, [approvedRewardsHistory]);
 
       const [newTask, setNewTask] = useState({
         name: "",
