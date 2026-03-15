@@ -15,7 +15,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useMemo, useState } = React;
+    const { useMemo, useState, useLayoutEffect } = React;
 
     const TASK_TABS = ["Heute", "Diese Woche", "Extras"];
     const KID_TABS = ["Aufgaben", "Belohnungen"];
@@ -199,11 +199,9 @@ React.useEffect(() => {
   localStorage.setItem("approvedRewardsHistory", JSON.stringify(approvedRewardsHistory));
 }, [approvedRewardsHistory]);
 
-React.useEffect(() => {
+useLayoutEffect(() => {
   if (screen === "parents" && parentTab === "Verwalten") {
-    window.requestAnimationFrame(() => {
-     window.scrollTo(0, manageScrollY.current);
-    });
+    window.scrollTo(0, manageScrollY.current);
   }
 }, [tasks, rewards, newTask, newReward, screen, parentTab]);
       const [newTask, setNewTask] = useState({
@@ -1035,19 +1033,19 @@ function updateTask(taskId, field, value) {
                     {tasks.map((task) => (
                       <div key={task.id} className="grid md:grid-cols-7 gap-2 border border-slate-100 rounded-2xl p-4 bg-slate-50">
                         <input defaultValue={task.name} onBlur={(e) => updateTask(task.id, "name", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
-                        <input value={task.points} type="number" onChange={(e) => updateTask(task.id, "points", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
-                        <select value={task.child} onChange={(e) => updateTask(task.id, "child", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2">
+                        <input defaultValue={task.points} type="number" onBlur={(e) => updateTask(task.id, "points", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <select defaultValue={task.child} onBlur={(e) => updateTask(task.id, "child", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2">
                           <option value="both">both</option>
                           <option value="alessia">alessia</option>
                           <option value="aurelia">aurelia</option>
                         </select>
-                        <select value={task.tab} onChange={(e) => updateTask(task.id, "tab", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2">
+                        <select defaultValue={task.tab} onBlur={(e) => updateTask(task.id, "tab", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2">
                           <option value="Heute">Heute</option>
                           <option value="Diese Woche">Diese Woche</option>
                           <option value="Extras">Extras</option>
                         </select>
                         <input defaultValue={task.icon} onBlur={(e) => updateTask(task.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
-                        <input value={task.timesPerWeek || ""} type="number" onChange={(e) => updateTask(task.id, "timesPerWeek", e.target.value)} placeholder="x/Woche" className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input defaultValue={task.timesPerWeek || ""} type="number" onBlur={(e) => updateTask(task.id, "timesPerWeek", e.target.value)} placeholder="x/Woche" className="rounded-xl border border-slate-200 px-3 py-2" />
                         <button onClick={() => deleteTask(task.id)} className="rounded-xl bg-red-100 text-red-700 px-3 py-2 font-semibold">
                           Löschen
                         </button>
@@ -1062,21 +1060,21 @@ function updateTask(taskId, field, value) {
                     <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Aufgabe</h3>
                     <div className="grid md:grid-cols-3 gap-3">
                       <input value={newTask.name} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, name: e.target.value }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newTask.points} type="number" onChange={(e) => setNewTask({ ...newTask, points: e.target.value })} placeholder="Punkte" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newTask.icon} onChange={(e) => setNewTask({ ...newTask, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <select value={newTask.child} onChange={(e) => setNewTask({ ...newTask, child: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2">
+                      <input value={newTask.points} type="number" onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, points: e.target.value }); }} placeholder="Punkte" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.icon} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, icon: e.target.value }); }} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <select value={newTask.child} onChange={(e) => { manageScrollY.current = window.scrollY; window.requestAnimationFrame(() => e.target.focus()); setNewTask({ ...newTask, child: e.target.value }); }} className="rounded-xl border border-slate-200 px-3 py-2">
                         <option value="both">both</option>
                         <option value="alessia">alessia</option>
                         <option value="aurelia">aurelia</option>
                       </select>
-                      <select value={newTask.tab} onChange={(e) => setNewTask({ ...newTask, tab: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2">
+                      <select value={newTask.tab} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, tab: e.target.value }); }} className="rounded-xl border border-slate-200 px-3 py-2">
                         <option value="Heute">Heute</option>
                         <option value="Diese Woche">Diese Woche</option>
                         <option value="Extras">Extras</option>
                       </select>
-                      <input value={newTask.timesPerWeek} type="number" onChange={(e) => setNewTask({ ...newTask, timesPerWeek: e.target.value })} placeholder="x/Woche optional" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.timesPerWeek} type="number" onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, timesPerWeek: e.target.value }); }} placeholder="x/Woche optional" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <div className="md:col-span-3">
-                        <input value={newTask.desc} onChange={(e) => setNewTask({ ...newTask, desc: e.target.value })} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                        <input value={newTask.desc} onChange={(e) => { const cursorStart = e.target.selectionStart; const cursorEnd = e.target.selectionEnd; manageScrollY.current = window.scrollY; setNewTask({ ...newTask, desc: e.target.value }); window.requestAnimationFrame(() => { e.target.focus(); if (cursorStart !== null && cursorEnd !== null) e.target.setSelectionRange(cursorStart, cursorEnd); }); }} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
                       </div>
                     </div>
                     <button onClick={addTask} className="mt-4 rounded-xl bg-slate-900 text-white px-5 py-3 font-semibold">
@@ -1091,15 +1089,15 @@ function updateTask(taskId, field, value) {
                   <div className="space-y-4 mb-8">
                     {rewards.map((reward) => (
                       <div key={reward.id} className="grid md:grid-cols-5 gap-2 border border-slate-100 rounded-2xl p-4 bg-slate-50">
-                        <input value={reward.name} onChange={(e) => updateReward(reward.id, "name", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
-                        <input value={reward.cost} type="number" onChange={(e) => updateReward(reward.id, "cost", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
-                        <input value={reward.icon} onChange={(e) => updateReward(reward.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input defaultValue={reward.name} onBlur={(e) => updateReward(reward.id, "name", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input defaultValue={reward.cost} type="number" onBlur={(e) => updateReward(reward.id, "cost", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                       <input defaultValue={reward.icon} onBlur={(e) => updateReward(reward.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
                         <button onClick={() => deleteReward(reward.id)} className="rounded-xl bg-red-100 text-red-700 px-3 py-2 font-semibold">
                           Löschen
                         </button>
                         <div></div>
                         <div className="md:col-span-5">
-                          <input value={reward.desc || ""} onChange={(e) => updateReward(reward.id, "desc", e.target.value)} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                          <input defaultValue={reward.desc || ""} onBlur={(e) => updateReward(reward.id, "desc", e.target.value)} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
                         </div>
                       </div>
                     ))}
@@ -1108,11 +1106,11 @@ function updateTask(taskId, field, value) {
                   <div className="border-t pt-6">
                     <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Belohnung</h3>
                     <div className="grid md:grid-cols-3 gap-3">
-                      <input value={newReward.name} onChange={(e) => setNewReward({ ...newReward, name: e.target.value })} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newReward.cost} type="number" onChange={(e) => setNewReward({ ...newReward, cost: e.target.value })} placeholder="Kosten" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newReward.icon} onChange={(e) => setNewReward({ ...newReward, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newReward.name} onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, name: e.target.value }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
+                     <input value={newReward.cost} type="number" onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, cost: e.target.value }); }} placeholder="Kosten" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newReward.icon} onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, icon: e.target.value }); }} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <div className="md:col-span-3">
-                        <input value={newReward.desc} onChange={(e) => setNewReward({ ...newReward, desc: e.target.value })} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                        <input value={newReward.desc} onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, desc: e.target.value }); }} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
                       </div>
                     </div>
                     <button onClick={addReward} className="mt-4 rounded-xl bg-slate-900 text-white px-5 py-3 font-semibold">
