@@ -1046,13 +1046,13 @@ function updateTask(taskId, field, value) {
                           <option value="Diese Woche">Diese Woche</option>
                           <option value="Extras">Extras</option>
                         </select>
-                        <input value={task.icon} onChange={(e) => updateTask(task.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
+                        <input defaultValue={task.icon} onBlur={(e) => updateTask(task.id, "icon", e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2" />
                         <input value={task.timesPerWeek || ""} type="number" onChange={(e) => updateTask(task.id, "timesPerWeek", e.target.value)} placeholder="x/Woche" className="rounded-xl border border-slate-200 px-3 py-2" />
                         <button onClick={() => deleteTask(task.id)} className="rounded-xl bg-red-100 text-red-700 px-3 py-2 font-semibold">
                           Löschen
                         </button>
                         <div className="md:col-span-7">
-                          <input value={task.desc || ""} onChange={(e) => updateTask(task.id, "desc", e.target.value)} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                          <input defaultValue={task.desc || ""} onBlur={(e) => updateTask(task.id, "desc", e.target.value)} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
                         </div>
                       </div>
                     ))}
