@@ -202,10 +202,10 @@ React.useEffect(() => {
 React.useEffect(() => {
   if (screen === "parents" && parentTab === "Verwalten") {
     window.requestAnimationFrame(() => {
-      window.scrollTo(0, manageScrollY);
+     window.scrollTo(0, manageScrollY.current);
     });
   }
-}, [tasks, rewards, screen, parentTab, manageScrollY]);
+}, [tasks, rewards, newTask, newReward, screen, parentTab]);
       const [newTask, setNewTask] = useState({
         name: "",
         points: 2,
@@ -222,7 +222,7 @@ React.useEffect(() => {
         icon: "🎁",
         desc: "",
       });
-const [manageScrollY, setManageScrollY] = useState(0);
+const manageScrollY = React.useRef(0);
 
       const kids = {
         alessia: {
@@ -470,7 +470,7 @@ const [manageScrollY, setManageScrollY] = useState(0);
       }
 
 function updateTask(taskId, field, value) {
-  setManageScrollY(window.scrollY);
+  manageScrollY.current = window.scrollY;
 
   setTasks((prev) =>
     prev.map((task) =>
@@ -492,6 +492,8 @@ function updateTask(taskId, field, value) {
       }
 
       function updateReward(rewardId, field, value) {
+         manageScrollY.current = window.scrollY;
+
         setRewards((prev) =>
           prev.map((reward) =>
             reward.id === rewardId
@@ -1059,7 +1061,7 @@ function updateTask(taskId, field, value) {
                   <div className="border-t pt-6">
                     <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Aufgabe</h3>
                     <div className="grid md:grid-cols-3 gap-3">
-                      <input value={newTask.name} onChange={(e) => setNewTask({ ...newTask, name: e.target.value })} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.name} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, name: e.target.value }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <input value={newTask.points} type="number" onChange={(e) => setNewTask({ ...newTask, points: e.target.value })} placeholder="Punkte" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <input value={newTask.icon} onChange={(e) => setNewTask({ ...newTask, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <select value={newTask.child} onChange={(e) => setNewTask({ ...newTask, child: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2">
