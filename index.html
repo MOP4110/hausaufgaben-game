@@ -203,7 +203,7 @@ useLayoutEffect(() => {
   if (screen === "parents" && parentTab === "Verwalten") {
     window.scrollTo(0, manageScrollY.current);
   }
-}, [tasks, rewards, newTask, newReward, screen, parentTab]);
+}, [tasks, rewards, screen, parentTab]);
       const [newTask, setNewTask] = useState({
         name: "",
         points: 2,
@@ -221,12 +221,17 @@ useLayoutEffect(() => {
         desc: "",
       });
 const manageScrollY = React.useRef(0);
+const newTaskChildRef = React.useRef(null);
+const newTaskDescRef = React.useRef(null);
+const newRewardNameRef = React.useRef(null);
+const newRewardDescRef = React.useRef(null);
+const newTaskNameRef = React.useRef(null);
 
       const kids = {
         alessia: {
           id: "alessia",
           name: "Alessia",
-          icon: "🤸",
+          icon: "⚽️",
           iconBg: "bg-pink-100",
           taskBg: "bg-pink-50 hover:bg-pink-100 border-pink-100",
           badgeText: "text-pink-700",
@@ -1059,22 +1064,22 @@ function updateTask(taskId, field, value) {
                   <div className="border-t pt-6">
                     <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Aufgabe</h3>
                     <div className="grid md:grid-cols-3 gap-3">
-                      <input value={newTask.name} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, name: e.target.value }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newTask.points} type="number" onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, points: e.target.value }); }} placeholder="Punkte" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newTask.icon} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, icon: e.target.value }); }} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <select value={newTask.child} onChange={(e) => { manageScrollY.current = window.scrollY; window.requestAnimationFrame(() => e.target.focus()); setNewTask({ ...newTask, child: e.target.value }); }} className="rounded-xl border border-slate-200 px-3 py-2">
+                      <input ref={newTaskNameRef} value={newTask.name} onChange={(e) => { const nextValue = e.target.value; const cursorStart = e.target.selectionStart; const cursorEnd = e.target.selectionEnd; setNewTask({ ...newTask, name: nextValue }); window.requestAnimationFrame(() => { newTaskNameRef.current?.focus(); if (newTaskNameRef.current && cursorStart !== null && cursorEnd !== null) newTaskNameRef.current.setSelectionRange(cursorStart, cursorEnd); }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.points} type="number" onChange={(e) => setNewTask({ ...newTask, points: e.target.value })} placeholder="Punkte" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.icon} onChange={(e) => setNewTask({ ...newTask, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <select ref={newTaskChildRef} value={newTask.child} onChange={(e) => { const nextValue = e.target.value; setNewTask({ ...newTask, child: nextValue }); window.requestAnimationFrame(() => newTaskChildRef.current?.focus()); }} className="rounded-xl border border-slate-200 px-3 py-2">
                         <option value="both">both</option>
                         <option value="alessia">alessia</option>
                         <option value="aurelia">aurelia</option>
                       </select>
-                      <select value={newTask.tab} onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, tab: e.target.value }); }} className="rounded-xl border border-slate-200 px-3 py-2">
+                      <select value={newTask.tab} onChange={(e) => setNewTask({ ...newTask, tab: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2">
                         <option value="Heute">Heute</option>
                         <option value="Diese Woche">Diese Woche</option>
                         <option value="Extras">Extras</option>
                       </select>
-                      <input value={newTask.timesPerWeek} type="number" onChange={(e) => { manageScrollY.current = window.scrollY; setNewTask({ ...newTask, timesPerWeek: e.target.value }); }} placeholder="x/Woche optional" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newTask.timesPerWeek} type="number" onChange={(e) => setNewTask({ ...newTask, timesPerWeek: e.target.value })} placeholder="x/Woche optional" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <div className="md:col-span-3">
-                        <input value={newTask.desc} onChange={(e) => { const cursorStart = e.target.selectionStart; const cursorEnd = e.target.selectionEnd; manageScrollY.current = window.scrollY; setNewTask({ ...newTask, desc: e.target.value }); window.requestAnimationFrame(() => { e.target.focus(); if (cursorStart !== null && cursorEnd !== null) e.target.setSelectionRange(cursorStart, cursorEnd); }); }} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                        <input ref={newTaskDescRef} value={newTask.desc} onChange={(e) => { const nextValue = e.target.value; const cursorStart = e.target.selectionStart; const cursorEnd = e.target.selectionEnd; setNewTask({ ...newTask, desc: nextValue }); window.requestAnimationFrame(() => { newTaskDescRef.current?.focus(); if (newTaskDescRef.current && cursorStart !== null && cursorEnd !== null) newTaskDescRef.current.setSelectionRange(cursorStart, cursorEnd); }); }} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
                       </div>
                     </div>
                     <button onClick={addTask} className="mt-4 rounded-xl bg-slate-900 text-white px-5 py-3 font-semibold">
@@ -1106,11 +1111,11 @@ function updateTask(taskId, field, value) {
                   <div className="border-t pt-6">
                     <h3 className="text-xl font-bold text-slate-900 mb-4">Neue Belohnung</h3>
                     <div className="grid md:grid-cols-3 gap-3">
-                      <input value={newReward.name} onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, name: e.target.value }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
-                     <input value={newReward.cost} type="number" onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, cost: e.target.value }); }} placeholder="Kosten" className="rounded-xl border border-slate-200 px-3 py-2" />
-                      <input value={newReward.icon} onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, icon: e.target.value }); }} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input ref={newRewardNameRef} value={newReward.name} onChange={(e) => { const nextValue = e.target.value; const cursorStart = e.target.selectionStart; const cursorEnd = e.target.selectionEnd; setNewReward({ ...newReward, name: nextValue }); window.requestAnimationFrame(() => { newRewardNameRef.current?.focus(); if (newRewardNameRef.current && cursorStart !== null && cursorEnd !== null) newRewardNameRef.current.setSelectionRange(cursorStart, cursorEnd); }); }} placeholder="Name" className="rounded-xl border border-slate-200 px-3 py-2" />
+                     <input value={newReward.cost} type="number" onChange={(e) => setNewReward({ ...newReward, cost: e.target.value })} placeholder="Kosten" className="rounded-xl border border-slate-200 px-3 py-2" />
+                      <input value={newReward.icon} onChange={(e) => setNewReward({ ...newReward, icon: e.target.value })} placeholder="Icon" className="rounded-xl border border-slate-200 px-3 py-2" />
                       <div className="md:col-span-3">
-                        <input value={newReward.desc} onChange={(e) => { manageScrollY.current = window.scrollY; setNewReward({ ...newReward, desc: e.target.value }); }} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+                        <input ref={newRewardDescRef} value={newReward.desc} onChange={(e) => { const nextValue = e.target.value; const cursorStart = e.target.selectionStart; const cursorEnd = e.target.selectionEnd; setNewReward({ ...newReward, desc: nextValue }); window.requestAnimationFrame(() => { newRewardDescRef.current?.focus(); if (newRewardDescRef.current && cursorStart !== null && cursorEnd !== null) newRewardDescRef.current.setSelectionRange(cursorStart, cursorEnd); }); }} placeholder="Beschreibung" className="w-full rounded-xl border border-slate-200 px-3 py-2" />
                       </div>
                     </div>
                     <button onClick={addReward} className="mt-4 rounded-xl bg-slate-900 text-white px-5 py-3 font-semibold">
