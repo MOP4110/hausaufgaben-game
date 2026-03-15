@@ -199,6 +199,13 @@ React.useEffect(() => {
   localStorage.setItem("approvedRewardsHistory", JSON.stringify(approvedRewardsHistory));
 }, [approvedRewardsHistory]);
 
+React.useEffect(() => {
+  if (screen === "parents" && parentTab === "Verwalten") {
+    window.requestAnimationFrame(() => {
+      window.scrollTo(0, manageScrollY);
+    });
+  }
+}, [tasks, rewards, screen, parentTab, manageScrollY]);
       const [newTask, setNewTask] = useState({
         name: "",
         points: 2,
@@ -215,6 +222,7 @@ React.useEffect(() => {
         icon: "🎁",
         desc: "",
       });
+const [manageScrollY, setManageScrollY] = useState(0);
 
       const kids = {
         alessia: {
@@ -461,22 +469,23 @@ React.useEffect(() => {
         });
       }
 
-      function updateTask(taskId, field, value) {
-        setTasks((prev) =>
-          prev.map((task) =>
-            task.id === taskId
-              ? {
-                  ...task,
-                  [field]:
-                    field === "points" || field === "timesPerWeek"
-                      ? Number(value || 0)
-                      : value,
-                }
-              : task
-          )
-        );
-      }
+function updateTask(taskId, field, value) {
+  setManageScrollY(window.scrollY);
 
+  setTasks((prev) =>
+    prev.map((task) =>
+      task.id === taskId
+        ? {
+            ...task,
+            [field]:
+              field === "points" || field === "timesPerWeek"
+                ? Number(value || 0)
+                : value,
+          }
+        : task
+    )
+  );
+}
       function deleteTask(taskId) {
         setTasks((prev) => prev.filter((task) => task.id !== taskId));
         setPendingApprovals((prev) => prev.filter((item) => item.taskId !== taskId));
